@@ -1,0 +1,8 @@
+#! /bin/bash
+file="/etc/myrole.conf"
+
+if [ -e "$file" ]
+then
+  echo "<<<myrole>>>"
+  cat $file
+fi

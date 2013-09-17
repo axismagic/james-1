@@ -1,0 +1,8 @@
+James is the tool used to provide the Build/Deploy  informarion of a host querying the Check_mk live status. Provided eacho host has defined the myrole service.
+
+:- Move these files to these specified locations 
+
+* james - /usr/local/bin
+* myrole.conf - /etc/
+* myrole - /omd/sites/<nag user>/local/share/check_mk/checks
+* check_myrole - on the client machines /usr/lib/check_mk_agent/plugins/ directory

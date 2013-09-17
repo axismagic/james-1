@@ -1,0 +1,94 @@
+#!/usr/bin/env python
+#
+
+import socket,re,argparse,commands,os
+
+def build_query (machine):
+        query="""GET services
+Columns:host_name plugin_output
+Filter:description = Myrole
+"""
+	newline="""
+"""
+        if machine!=None:
+               query = query+"Filter:host_name = "+machine+newline
+        return query
+
+#######################################################################
+def get_lql (query):
+	socket_path = "/omd/sites/nagiosmon1/tmp/run/live"
+	s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+	s.connect(socket_path)
+	s.send(query)
+
+	# Important: Close sending direction. That way
+	# the other side knows, we are finished.
+	s.shutdown(socket.SHUT_WR)
+
+	# Now read the answer
+	answer = s.recv(100000000)
+	return answer
+
+###########################################################
+def query_check_mk (query):
+	#host="app217"
+	host="localhost"
+	port="6557"
+	file="/tmp/james.query"
+	fo = open(file, "wb")
+	fo.write(query);
+	fo.close()
+	cmd="nc "+host+" "+port+" < "+file
+	status, output = commands.getstatusoutput(cmd)
+	os.remove(file)
+	return output
+	
+
+###########################################################
+def get_rows (answer):
+#input is like below, mark the last blank line (which is present if queried through socket and not if queried through port)
+#app188vm4;Environment:Production,Project:DevOPS,Role:RepoServer,Build:DEP-786,Site:Colo
+#app188vm5;Environment:Production,Project:DevOPS,Role:ShellServer,Build:DEP-786,Site:Colo
+#
+        james = {}
+	if answer :
+           lines=answer.split('\n')
+           #lines=answer.split('\n')[:-1]
+	   # Since while queriying through port we dont have extra blank line
+           for line in lines :
+              (host,details) =  re.split(';', line)
+              james[host]= {}
+              details = re.split(',', details)
+              for d in details:
+                (key,value) = re.split(':', d)
+                james[host][key]=value
+        return james
+###########################################################
+def print_output (james) :
+	if james :
+            print "{0:12} {1:12} {2:12} {3:12} {4:12} {5:12}".format("Host","Environment","Project","Role","Build","Site")
+            #print "%s %25s %25s %25s %25s %25s" % ("Host","Environment","Project", "Role", "Build", "Site")
+            print "-"*70
+            for key in james:
+                #print "%s %25s %25s %25s %25s %25s" % (key,james[key]["Environment"],james[key]["Project"],james[key]["Role"],james[key]["Build"],james[key]["Site"])
+                print "{0:12} {1:12} {2:12} {3:12} {4:12} {5:12}".format(key,james[key]["Environment"],james[key]["Project"],james[key]["Role"],james[key]["Build"],james[key]["Site"])
+	else:
+	     print "No matching Host's Found"
+
+###########################################################
+#Main starts here
+
+parser = argparse.ArgumentParser(description="Queries the livestatus for Build information")
+parser.add_argument("show", help="show's all the host")
+parser.add_argument("-m", "--machine", help="host name to search for")
+args = parser.parse_args()
+
+machine=args.machine
+
+query = build_query (machine)
+#print query
+answer = query_check_mk (query)
+#print answer
+#answer = get_lql(query)
+james = get_rows (answer)
+print_output (james)

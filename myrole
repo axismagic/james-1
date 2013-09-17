@@ -1,0 +1,36 @@
+#!/usr/bin/python
+# the inventory function (dummy)
+
+def inventory_myrole(info):
+   # begin with empty inventory
+   inventory = []
+
+   # loop over all output lines of the agent
+   for line in info:
+      key = line[0]   # device name is in the first column
+      value = line[1]  # SMART variable name in the third
+
+      if key in ("Myrole") :
+          # found an interesting line, add to inventory
+          inventory.append( (key, None) )
+
+   return inventory
+
+# the check function (dummy)
+def check_myrole(item, params, info):
+     # loop over all lines
+    for line in info:
+      # is this our line?
+      if line[0] == item :
+         build = line[1]
+         return (0, "%s" % build)
+
+
+# declare the check to Check_MK
+#check_info["myrole"] = {
+#    'check_function':            check_myrole,
+#    'inventory_function':        inventory_myrole,
+#    'service_description':       '%s',
+#}
+check_info["myrole"] = (check_myrole, "%s", 1, inventory_myrole)
+
