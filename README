@@ -1,4 +1,4 @@
-James is the tool used to provide the Build/Deploy  informarion of a host querying the Check_mk live status. Provided eacho host has defined the myrole service.
+James is the tool used to provide the Build/Deploy  informarion of a host querying the Check_mk live status. Provided each host has defined the myrole service.
 
 :- Move these files to these specified locations 
 
