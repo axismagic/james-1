@@ -37,6 +37,7 @@
 
 
 import socket,re,argparse,commands,os
+from jconfig import sites
 
 def build_query (machine):
         query="""GET services
@@ -65,10 +66,7 @@ def get_lql (query):
 	return answer
 
 # +----------------------------------------------------------------------+
-def query_check_mk (query):
-	#host="app217"
-	host="localhost"
-	port="6557"
+def query_check_mk (query,host,port):
 	file="/tmp/james.query"
 	fo = open(file, "wb")
 	fo.write(query);
@@ -119,11 +117,11 @@ parser.add_argument("-m", "--machine", help="host name to search for")
 args = parser.parse_args()
 
 machine=args.machine
-
+james= {}
 query = build_query (machine)
-#print query
-answer = query_check_mk (query)
-#print answer
-#answer = get_lql(query)
-james = get_rows (answer)
+for site in sites :
+	host=sites[site]['host']
+	port=sites[site]['port']
+	answer = query_check_mk (query,host,port)
+	james.update(get_rows (answer))
 print_output (james)

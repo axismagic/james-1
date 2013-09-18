@@ -6,3 +6,10 @@ James is the tool used to provide the Build/Deploy  informarion of a host queryi
 * myrole.conf - /etc/
 * myrole - /omd/sites/<nag user>/local/share/check_mk/checks
 * check_myrole - on the client machines /usr/lib/check_mk_agent/plugins/ directory
+
+:- Define all your check_mk multisite hosts in jconfig file
+
+Dependancies : 
+
+nc or netcat  - this is an utility that Reads and writes data across network connections using TCP or UDP, install it using yum
+argparse - install it using PIP
