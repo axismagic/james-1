@@ -39,7 +39,8 @@
 import socket,re,argparse,commands,os
 from jconfig import sites
 
-def build_query (machine):
+# +----------------------------------------------------------------------+
+def build_query (machine,type):
         query="""GET services
 Columns:host_name plugin_output
 Filter:description = Myrole
@@ -48,6 +49,8 @@ Filter:description = Myrole
 """
         if machine!=None:
                query = query+"Filter:host_name = "+machine+newline
+	if type!=None:
+		query = query+"Filter:plugin_output ~ "+type+newline
         return query
 
 # +----------------------------------------------------------------------+
@@ -109,19 +112,51 @@ def print_output (james) :
 	     print "No matching Host's Found"
 
 # +----------------------------------------------------------------------+
+def gen_conf (james):
+	file="core.mk"
+	fo = open(file, "wb")
+	fo.write("all_hosts = all_hosts + [\n")
+	delimater="|"
+	if james :
+	     for key in james:
+		tags=james[key].keys()
+		row=key
+		for i in range(len(tags)):
+		    row=row+delimater+james[key][tags[i]]
+	        row="'"+row+"',"
+		fo.write("%s\n" % (row))
+	fo.write("]")
+	fo.close
+
+	fo = open(file, "r")
+	print fo.read()
+	fo.close
+
+	return 0
+
+
+
+# +----------------------------------------------------------------------+
+def show (machine,type) :
+	james= {}
+	query = build_query (machine,type)
+	print query
+	for site in sites :
+        	host=sites[site]['host']
+	        port=sites[site]['port']
+        	answer = query_check_mk (query,host,port)
+        	james.update(get_rows (answer))
+	print_output (james)
+
+# +----------------------------------------------------------------------+
 #Main starts here
 
 parser = argparse.ArgumentParser(description="Queries the livestatus for Build information")
 parser.add_argument("show", help="show's all the host")
 parser.add_argument("-m", "--machine", help="host name to search for")
+parser.add_argument("-t", "--type", help="Type of the machine to search for.This will be regex to search in any key in myrole")
 args = parser.parse_args()
 
 machine=args.machine
-james= {}
-query = build_query (machine)
-for site in sites :
-	host=sites[site]['host']
-	port=sites[site]['port']
-	answer = query_check_mk (query,host,port)
-	james.update(get_rows (answer))
-print_output (james)
+type=args.type
+show(machine,type)
