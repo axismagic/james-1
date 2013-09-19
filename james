@@ -47,7 +47,7 @@ Filter:description = Myrole
 """
 	newline="""
 """
-        if machine!=None:
+        if ( machine!=None and machine!="0"):
                query = query+"Filter:host_name = "+machine+newline
 	if type!=None:
 		query = query+"Filter:plugin_output ~ "+type+newline
@@ -100,19 +100,10 @@ def get_rows (answer):
                 james[host][key]=value
         return james
 # +----------------------------------------------------------------------+
-def print_output (james) :
-	if james :
-            print "{0:12} {1:12} {2:12} {3:12} {4:12} {5:12}".format("Host","Environment","Project","Role","Build","Site")
-            #print "%s %25s %25s %25s %25s %25s" % ("Host","Environment","Project", "Role", "Build", "Site")
-            print "-"*70
-            for key in james:
-                #print "%s %25s %25s %25s %25s %25s" % (key,james[key]["Environment"],james[key]["Project"],james[key]["Role"],james[key]["Build"],james[key]["Site"])
-                print "{0:12} {1:12} {2:12} {3:12} {4:12} {5:12}".format(key,james[key]["Environment"],james[key]["Project"],james[key]["Role"],james[key]["Build"],james[key]["Site"])
-	else:
-	     print "No matching Host's Found"
-
-# +----------------------------------------------------------------------+
-def gen_conf (james):
+def gen_conf (args):
+        machine='0'
+	type=args.type
+        james=create_james(machine,type)
 	file="core.mk"
 	fo = open(file, "wb")
 	fo.write("all_hosts = all_hosts + [\n")
@@ -134,29 +125,49 @@ def gen_conf (james):
 
 	return 0
 
-
-
 # +----------------------------------------------------------------------+
-def show (machine,type) :
+def create_james(machine,type):
 	james= {}
 	query = build_query (machine,type)
-	print query
-	for site in sites :
-        	host=sites[site]['host']
-	        port=sites[site]['port']
-        	answer = query_check_mk (query,host,port)
-        	james.update(get_rows (answer))
-	print_output (james)
+        for site in sites :
+                host=sites[site]['host']
+                port=sites[site]['port']
+                answer = query_check_mk (query,host,port)
+                james.update(get_rows (answer))
+	return james
 
 # +----------------------------------------------------------------------+
-#Main starts here
 
-parser = argparse.ArgumentParser(description="Queries the livestatus for Build information")
-parser.add_argument("show", help="show's all the host")
-parser.add_argument("-m", "--machine", help="host name to search for")
-parser.add_argument("-t", "--type", help="Type of the machine to search for.This will be regex to search in any key in myrole")
-args = parser.parse_args()
+def show (args) :
+	machine=args.machine
+	type=args.type
+	james=create_james(machine,type)
+        if james :
+            print "{0:12} {1:12} {2:12} {3:12} {4:12} {5:12}".format("Host","Environment","Project","Role","Build","Site")
+            print "-"*70
+            for key in james:
+                print "{0:12} {1:12} {2:12} {3:12} {4:12} {5:12}".format(key,james[key]["Environment"],james[key]["Project"],james[key]["Role"],james[key]["Build"],james[key]["Site"])
+	
+        else:
+             print "No matching Host's Found"
+	return 0
+# +----------------------------------------------------------------------+
+def main ():
+	parser = argparse.ArgumentParser(description="Queries the livestatus for Build information")
+	subparsers = parser.add_subparsers()
 
-machine=args.machine
-type=args.type
-show(machine,type)
+	parser_show = subparsers.add_parser('show',help="show's all the host")
+	parser_show.add_argument("-m", "--machine", help="host name to search for")
+	parser_show.add_argument("-t", "--type", help="Type of the machine to search for.This will be regex to search in any key in myrole")
+	parser_show.set_defaults(func=show)
+
+	parser_gen  = subparsers.add_parser('gen', help="Generates the Configuration for supplied Core via -t")
+        parser_gen.add_argument("-t", "--type", help="Type of the machine to search for.This will be regex to search in any key in myrole",required=True)
+	parser_gen.set_defaults(func=gen_conf)
+	
+	args = parser.parse_args()
+	
+	args.func(args)
+	return 0
+# +----------------------------------------------------------------------+
+main()
