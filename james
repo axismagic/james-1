@@ -36,7 +36,7 @@
 
 
 
-import socket,re,argparse,commands,os
+import socket,re,argparse,commands,os,sys
 from jconfig import sites
 
 # +----------------------------------------------------------------------+
@@ -170,4 +170,6 @@ def main ():
 	args.func(args)
 	return 0
 # +----------------------------------------------------------------------+
-main()
+
+if __name__ == "__main__":
+	 sys.exit(main())
